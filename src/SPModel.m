@@ -289,6 +289,16 @@ static NSMutableSet *checkedSqlTables;
     return [db executeUpdate:deleteSql withArgumentsInArray:@[[self valueForKey:@"spid"]]];
 }
 
++ (BOOL)bulkInsert:(NSArray<SPModel*>*)models {
+    for (SPModel *m in models) {
+        [SPModelDB.shared.fmdbq inTransaction:^(FMDatabase * _Nonnull db, BOOL * _Nonnull rollback) {
+            [m saveWithDB:db];
+        }];
+    }
+    return YES;
+}
+
+
 #pragma mark - Query methods
 
 + (NSArray*)getAll {
@@ -381,25 +391,6 @@ static NSMutableSet *checkedSqlTables;
         }];
     }
     return item;
-}
-
-+ (void)startFMDBQueueSafelyWithDB:(FMDatabase*)db
-                        inDatabase:(void (^)(FMDatabase *db))block {
-    if (db == nil) {
-        [SPModelDB.shared.fmdbq inDatabase:block];
-    } else {
-        block(db);
-    }
-}
-
-+ (void)startFMDBQueueSafelyWithDB:(FMDatabase*)db
-                          rollback:(BOOL*)rollback
-                     inTransaction:(void (^)(FMDatabase *db, BOOL *rollback))block {
-    if (db == nil) {
-        [SPModelDB.shared.fmdbq inTransaction:block];
-    } else {
-        block(db, rollback);
-    }
 }
 
 #pragma mark - Obj Runtime

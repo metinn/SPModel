@@ -13,12 +13,11 @@
 
 @property (nonatomic) NSInteger spid;
 
-- (instancetype)initWithDB:(FMDatabase*)db;
-
 - (BOOL)save;
 + (SPModel*)getObjectWithID:(NSInteger)modelid;
 - (BOOL)update;
 - (BOOL)deleteObject;
++ (BOOL)bulkInsert:(NSArray<SPModel*>*)models;
 + (NSArray*)getAll;
 + (NSArray*)getAllWithOffset:(int)offset withLimit:(int)limit;
 + (NSArray*)getAllWithQuery:(NSString*)whereSql values:(NSArray*)values;
