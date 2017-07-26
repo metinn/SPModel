@@ -8,7 +8,6 @@
 
 #import "SPModel.h"
 #import <objc/runtime.h>
-#import "FMDB.h"
 #import "SPModelDB.h"
 #import "SPModelTable.h"
 #import "SPModelProperties.h"
@@ -22,82 +21,88 @@ static NSMutableSet *checkedSqlTables;
 {
     self = [super init];
     if (self) {
-        
-        static dispatch_once_t onceToken;
-        dispatch_once(&onceToken, ^{
-            checkedSqlTables = [NSMutableSet new];
-        });
-        
-        // prevent table check in every init, do it only once in a runtime
-        // use serialq to prevent race condition
-        dispatch_serialq_sync_safe(^{
-            if ([checkedSqlTables containsObject:NSStringFromClass([self class])]) {
-                return;
-            }
-            
-            // create table if needed and log it
-            NSString *createSql = [self getCrateTableSql];
-            BOOL isTableCreated = [self createTableIfNeededWithSql:createSql];
-            if (isTableCreated &&
-                [self isKindOfClass:[SPModelTable class]] == NO &&
-                [self isKindOfClass:[SPModelProperties class]] == NO) {
-                
-                dispatch_serialq_async_safe(^{
-                    [self saveNewTableInfoWithSql:createSql];
-                });
-            }
-            
-            NSLog(@"%@ class object initialized", NSStringFromClass([self class]));
-        });
-        
-        //TODO: Bir SPModel baska bir SPModelin property'si ise,
-        //1.spmodel property'yi farket
-        //2.sql tablosunda foreign key olarak kaydet. kolon adini daha sonradan okundugunda islenebilecek ve gidecegi tabloyu bulduracak sekilde ayarla
-        //3. foreign key'in karsiligini olustur. Transaction kullan
+        [SPModelDB.shared.fmdbq inDatabase:^(FMDatabase * _Nonnull db) {
+            [self initializeSPModelWithDB:db];
+        }];
     }
     return self;
 }
 
-- (void)saveNewTableInfoWithSql:(NSString*)createSql {
-    SPModelTable *newTable = [SPModelTable new];
+- (instancetype)initWithDB:(FMDatabase*)db
+{
+    self = [super init];
+    if (self) {
+        [self initializeSPModelWithDB:db];
+    }
+    return self;
+}
+
+-(void)initializeSPModelWithDB:(FMDatabase*)db {
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        checkedSqlTables = [NSMutableSet new];
+    });
+    
+    // prevent table check in every init, do it only once in a runtime
+    // use serialq to prevent race condition
+    dispatch_serialq_sync_safe(^{
+        if ([checkedSqlTables containsObject:NSStringFromClass([self class])]) {
+            return;
+        }
+        
+        // create table if needed and log it
+        NSString *createSql = [self getCrateTableSql];
+        BOOL isTableCreated = [self createTableIfNeededWithSql:createSql withDB:db];
+        if (isTableCreated &&
+            [self isKindOfClass:[SPModelTable class]] == NO &&
+            [self isKindOfClass:[SPModelProperties class]] == NO) {
+            
+            dispatch_serialq_async_safe(^{
+                [self saveNewTableInfoWithSql:createSql withDB:db];
+            });
+        }
+        
+        NSLog(@"%@ class object initialized", NSStringFromClass([self class]));
+    });
+}
+
+- (void)saveNewTableInfoWithSql:(NSString*)createSql withDB:(FMDatabase*)db {
+    SPModelTable *newTable = [[SPModelTable alloc] initWithDB:db];
     newTable.name = NSStringFromClass([self class]);
     newTable.createSql = createSql;
-    [newTable save];
+    [newTable saveWithDB:db];
     
     NSArray *pro = [self propertyNames];
     for (NSString* title in pro) {
         NSString* type = [self getSqliteTypeFromPropertyName:title];
-        SPModelProperties *mp = [SPModelProperties new];
+        SPModelProperties *mp = [[SPModelProperties alloc] initWithDB:db];
         mp.fk_spmodeltable = newTable.spid;
         mp.name = title;
         mp.type = type;
-        [mp save];
+        [mp saveWithDB:db];
     }
 }
 
-- (BOOL)createTableIfNeededWithSql:(NSString*)createSql {
-    __block BOOL methodResult;
+- (BOOL)createTableIfNeededWithSql:(NSString*)createSql withDB:(FMDatabase*)db {
+    __block BOOL methodResult = NO;
+        
+    NSString *sql = [NSString stringWithFormat:@"select * from %@ limit 1", NSStringFromClass([self class])];
+    FMResultSet *result = [db executeQuery:sql];
     
-    [SPModelDB.shared.fmdbq inDatabase:^(FMDatabase * _Nonnull db) {
-        
-        NSString *sql = [NSString stringWithFormat:@"select * from %@ limit 1", NSStringFromClass([self class])];
-        FMResultSet *result = [db executeQuery:sql];
-        
-        // set checked
-        [checkedSqlTables addObject:NSStringFromClass([self class])];
-        
-        // if there is not table, create one
-        if (result == nil) {
-            if ([db executeUpdate:createSql] == YES) {
-                methodResult = YES;
-                NSLog(@"√ %@ table created", NSStringFromClass([self class]));
-            } else {
-                NSLog(@"X %@ table could not created", NSStringFromClass([self class]));
-            }
+    // set checked
+    [checkedSqlTables addObject:NSStringFromClass([self class])];
+    
+    // if there is not table, create one
+    if (result == nil) {
+        if ([db executeUpdate:createSql] == YES) {
+            methodResult = YES;
+            NSLog(@"√ %@ table created", NSStringFromClass([self class]));
+        } else {
+            NSLog(@"X %@ table could not created", NSStringFromClass([self class]));
         }
-        
-        [result close];
-    }];
+    }
+    
+    [result close];
     
     return methodResult;
 }
@@ -111,8 +116,7 @@ static NSMutableSet *checkedSqlTables;
     
     for (NSString* title in pro) {
         NSString* type = [self getSqliteTypeFromPropertyName:title];
-        //TODO: change to starts with
-        if ([type containsString:@"fk_"]) {
+        if ([type hasPrefix:@"fk_"]) {
             [createSql appendFormat:@" %@ %@,", type, @"INTEGER"];
         } else {
             [createSql appendFormat:@" %@ %@,", title, type];
@@ -170,6 +174,15 @@ static NSMutableSet *checkedSqlTables;
 #pragma mark - CRUD
 
 - (BOOL)save {
+    __block BOOL result;
+    [SPModelDB.shared.fmdbq inDatabase:^(FMDatabase * _Nonnull db) {
+        result = [self saveWithDB:db];
+    }];
+    
+    return result;
+}
+
+- (BOOL)saveWithDB:(FMDatabase*)db {
     NSMutableString *insertSql = [NSMutableString stringWithFormat:@"insert into %@(", NSStringFromClass([self class])];
     NSArray *properties = [self propertyNames];
     
@@ -184,7 +197,7 @@ static NSMutableSet *checkedSqlTables;
             if ([[value class] isSubclassOfClass:[SPModel class]]) {
                 [insertSql appendFormat:@"fk_%@_%@,", NSStringFromClass([value class]), title];
                 
-                [(SPModel*)value save];
+                [(SPModel*)value saveWithDB:db];
                 [values addObject:[NSNumber numberWithInteger:[(SPModel*)value spid]]];
             } else {
                 [insertSql appendFormat:@"%@,", title];
@@ -201,17 +214,15 @@ static NSMutableSet *checkedSqlTables;
     
     [insertSql appendFormat:@") values(%@);", valuesString];
     
-//    NSLog(@"insert sql %@", insertSql);
+    //    NSLog(@"insert sql %@", insertSql);
     
     __block BOOL result;
-    [SPModelDB.shared.fmdbq inDatabase:^(FMDatabase * _Nonnull db) {
-        result = [db executeUpdate:insertSql withArgumentsInArray:values];
-        if (result == YES) {
-            NSLog(@"%@ class object saved", NSStringFromClass([self class]));
-        }
-        
-        self.spid = [db lastInsertRowId];
-    }];
+    result = [db executeUpdate:insertSql withArgumentsInArray:values];
+    if (result == YES) {
+        NSLog(@"%@ class object saved", NSStringFromClass([self class]));
+    }
+    
+    self.spid = [db lastInsertRowId];
     
     return result;
 }
@@ -229,6 +240,15 @@ static NSMutableSet *checkedSqlTables;
 }
 
 - (BOOL)update {
+    __block BOOL result;
+    [SPModelDB.shared.fmdbq inDatabase:^(FMDatabase * _Nonnull db) {
+        result = [self updateWithDB:db];
+    }];
+    
+    return result;
+}
+
+- (BOOL)updateWithDB:(FMDatabase*)db {
     NSMutableString *updateSql = [NSMutableString stringWithFormat:@"update %@ set ", NSStringFromClass([self class])];
     NSArray *properities = [self propertyNames];
     
@@ -252,25 +272,21 @@ static NSMutableSet *checkedSqlTables;
     
     NSLog(@"update sql -> %@", updateSql);
     
+    return [db executeUpdate:updateSql withArgumentsInArray:values];
+}
+
+- (BOOL)deleteObject {
     __block BOOL result;
     [SPModelDB.shared.fmdbq inDatabase:^(FMDatabase * _Nonnull db) {
-        result = [db executeUpdate:updateSql withArgumentsInArray:values];
+        result = [self deleteObjectWithDB:db];
     }];
     
     return result;
 }
 
-- (BOOL)deleteObject {
+- (BOOL)deleteObjectWithDB:(FMDatabase*)db {
     NSMutableString *deleteSql = [NSMutableString stringWithFormat:@"delete from %@ where spid = ?", NSStringFromClass([self class])];
-    
-    __block BOOL result;
-    [SPModelDB.shared.fmdbq inDatabase:^(FMDatabase * _Nonnull db) {
-        result = [db executeUpdate:deleteSql withArgumentsInArray:@[[self valueForKey:@"spid"]]];
-    }];
-    
-    return result;
-    
-    return YES;
+    return [db executeUpdate:deleteSql withArgumentsInArray:@[[self valueForKey:@"spid"]]];
 }
 
 #pragma mark - Query methods
@@ -305,19 +321,14 @@ static NSMutableSet *checkedSqlTables;
 + (NSArray*)getObjectsWithSql:(NSString*)sql withValues:(NSArray*)values {
     NSMutableArray *array = [NSMutableArray new];
     
-    //TODO: first init calls create table sql, if this called indside fmdbqueue, queue will be deadlocked
-    //this line is workround. FMDB instance should send to init for safety
-    __block id item = [[[self class] alloc] init];
-    
     [SPModelDB.shared.fmdbq inDatabase:^(FMDatabase * _Nonnull db) {
         
         FMResultSet *rs = [db executeQuery:sql withArgumentsInArray:values];
         NSMutableDictionary *columnMap = [rs columnNameToIndexMap];
         while ([rs next]) {
-            item = [[[self class] alloc] init];
+            __block id item = [[[self class] alloc] initWithDB:db];
             [columnMap enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSNumber *_Nonnull obj, BOOL * _Nonnull stop) {
-                //TODO: change to starts with
-                if ([key containsString:@"fk_"]) {
+                if ([key hasPrefix:@"fk_"]) {
                     // columnNameForIndex called because FMResultSet columnNameToIndexMap method lowercases all names
                     NSString *orjColumnName = [rs columnNameForIndex:[obj intValue]];
                     NSString *tmp = [orjColumnName stringByReplacingOccurrencesOfString:@"fk_"
@@ -343,39 +354,32 @@ static NSMutableSet *checkedSqlTables;
 }
 
 + (SPModel*)getObjectWithSql:(NSString*)sql withValues:(NSArray*)values withDB:(FMDatabase*)db {
+    __block id item = [[[self class] alloc] initWithDB:db];
     
-    //TODO: first init calls create table sql, if this called indside fmdbqueue, queue will be deadlocked
-    //this line is workround. FMDB instance should send to init for safety
-    __block id item = [[[self class] alloc] init];
-    
-    [self startFMDBQueueSafelyWithDB:db inDatabase:^(FMDatabase *db) {
-    
-        FMResultSet *rs = [db executeQuery:sql withArgumentsInArray:values];
-        NSMutableDictionary *columnMap = [rs columnNameToIndexMap];
-        while ([rs next]) {
-            [columnMap enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSNumber *_Nonnull obj, BOOL * _Nonnull stop) {
-                //TODO: change to starts with
-                if ([key containsString:@"fk_"]) {
-                    // columnNameForIndex called because FMResultSet columnNameToIndexMap method lowercases all names
-                    NSString *orjColumnName = [rs columnNameForIndex:[obj intValue]];
-                    NSString *tmp = [orjColumnName stringByReplacingOccurrencesOfString:@"fk_"
-                                                                             withString:@""];
-                    NSArray *components = [tmp componentsSeparatedByString:@"_"];
-                    NSString *classString = components[0];
-                    NSString *propertyName = components[1];
-                    
-                    Class pclass = NSClassFromString(classString);
-                    
-                    NSNumber *_id = [rs objectForColumn:key];
-                    SPModel *p = [pclass getObjectWithID:[_id integerValue] withDB:db];
-                    
-                    [item setValue:p forKey:propertyName];
-                } else {
-                    [item setValue:[rs objectForColumn:key] forKey:key];
-                }
-            }];
-        }
-    }];
+    FMResultSet *rs = [db executeQuery:sql withArgumentsInArray:values];
+    NSMutableDictionary *columnMap = [rs columnNameToIndexMap];
+    while ([rs next]) {
+        [columnMap enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSNumber *_Nonnull obj, BOOL * _Nonnull stop) {
+            if ([key hasPrefix:@"fk_"]) {
+                // columnNameForIndex called because FMResultSet columnNameToIndexMap method lowercases all names
+                NSString *orjColumnName = [rs columnNameForIndex:[obj intValue]];
+                NSString *tmp = [orjColumnName stringByReplacingOccurrencesOfString:@"fk_"
+                                                                         withString:@""];
+                NSArray *components = [tmp componentsSeparatedByString:@"_"];
+                NSString *classString = components[0];
+                NSString *propertyName = components[1];
+                
+                Class pclass = NSClassFromString(classString);
+                
+                NSNumber *_id = [rs objectForColumn:key];
+                SPModel *p = [pclass getObjectWithID:[_id integerValue] withDB:db];
+                
+                [item setValue:p forKey:propertyName];
+            } else {
+                [item setValue:[rs objectForColumn:key] forKey:key];
+            }
+        }];
+    }
     return item;
 }
 

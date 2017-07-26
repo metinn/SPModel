@@ -7,10 +7,13 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "FMDB.h"
 
 @interface SPModel : NSObject
 
 @property (nonatomic) NSInteger spid;
+
+- (instancetype)initWithDB:(FMDatabase*)db;
 
 - (BOOL)save;
 + (SPModel*)getObjectWithID:(NSInteger)modelid;

@@ -79,7 +79,7 @@ If you will create Person class that have Car class as property, SPModel will ha
 
 ## Road Map
  
- * More solid codebase
+ * More solid codebase (In Progress...)
  * Automatically handling new properties
  * Implementing proper way to migration
  * SPState class that stores only one object

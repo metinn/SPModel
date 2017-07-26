@@ -15,24 +15,13 @@
     self = [super init];
     if (self) {
         NSString *writableDBPath = [SPModelDB getSharedDBPath];
-        NSLog(@"My Path %@", writableDBPath);
-        NSLog(@"--------   DB IS READY  ---------");
+        NSLog(@"Spmodel db Path %@", writableDBPath);
         
         self.serialq = dispatch_queue_create([@"com.spmodel.db" UTF8String], DISPATCH_QUEUE_SERIAL);
         self.fmdbq = [FMDatabaseQueue databaseQueueWithPath:writableDBPath];
         
         if ([[NSFileManager defaultManager] fileExistsAtPath:writableDBPath] == NO) {
-            self.fmdbq = [FMDatabaseQueue databaseQueueWithPath:writableDBPath];
-//            [self.queue inDatabase:^(FMDatabase *db) {
-//                [db executeUpdate:@"create table SPModelTables(id INTEGER PRIMARY KEY, \
-//                 name TEXT,\
-//                 createSql TEXT)"];
-//                
-//                [db executeUpdate:@"create table SPModelProperties(id INTEGER PRIMARY KEY, \
-//                 tableID INTEGER,\
-//                 name TEXT,\
-//                 type TEXT)"];
-//            }];
+            // First execution
         }
     }
     return self;
