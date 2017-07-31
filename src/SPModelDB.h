@@ -13,6 +13,7 @@
 @property (nonatomic) FMDatabaseQueue *fmdbq;
 @property (nonatomic) dispatch_queue_t serialq;
 
++ (NSString*)getSharedDBPath;
 + (SPModelDB*)shared;
 
 @end

@@ -228,12 +228,16 @@ static NSMutableSet *checkedSqlTables;
 }
 
 + (SPModel*)getObjectWithID:(NSInteger)modelid {
-    return [self getObjectWithID:modelid
-                          withDB:nil];
+    __block SPModel *result;
+    [SPModelDB.shared.fmdbq inDatabase:^(FMDatabase * _Nonnull db) {
+        result = [self getObjectWithID:modelid
+                                withDB:db];
+    }];
+    return result;
 }
 
 + (SPModel*)getObjectWithID:(NSInteger)modelid withDB:(FMDatabase*)db {
-    NSString *sql = [NSString stringWithFormat:@"select * from %@ where spid = %li", NSStringFromClass([self class]), modelid];
+    NSString *sql = [NSString stringWithFormat:@"select * from %@ where spid = ?", NSStringFromClass([self class])];
     return [self getObjectWithSql:sql
                        withValues:@[[NSNumber numberWithInteger:modelid]]
                            withDB:db];
@@ -368,7 +372,7 @@ static NSMutableSet *checkedSqlTables;
     
     FMResultSet *rs = [db executeQuery:sql withArgumentsInArray:values];
     NSMutableDictionary *columnMap = [rs columnNameToIndexMap];
-    while ([rs next]) {
+    if ([rs next]) {
         [columnMap enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSNumber *_Nonnull obj, BOOL * _Nonnull stop) {
             if ([key hasPrefix:@"fk_"]) {
                 // columnNameForIndex called because FMResultSet columnNameToIndexMap method lowercases all names

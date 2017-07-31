@@ -7,6 +7,7 @@
 //
 
 #import "SPModelDB.h"
+#import <sqlite3.h>
 
 @implementation SPModelDB
 
@@ -18,7 +19,10 @@
         NSLog(@"Spmodel db Path %@", writableDBPath);
         
         self.serialq = dispatch_queue_create([@"com.spmodel.db" UTF8String], DISPATCH_QUEUE_SERIAL);
-        self.fmdbq = [FMDatabaseQueue databaseQueueWithPath:writableDBPath];
+        self.fmdbq = [FMDatabaseQueue databaseQueueWithPath:writableDBPath
+                                                      flags:SQLITE_OPEN_READWRITE |
+                                                            SQLITE_OPEN_CREATE |
+                                                            SQLITE_OPEN_FILEPROTECTION_NONE];
         
         if ([[NSFileManager defaultManager] fileExistsAtPath:writableDBPath] == NO) {
             // First execution

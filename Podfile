@@ -7,4 +7,9 @@ target 'SPModel' do
 
   # Pods for SPModel
   pod 'FMDB', '~> 2.7'
+
+  target "SPModelTests" do
+    inherit! :search_paths
+  end
+
 end
