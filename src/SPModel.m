@@ -346,29 +346,31 @@ static NSMutableSet *checkedSqlTables;
     [SPModelDB.shared.fmdbq inDatabase:^(FMDatabase * _Nonnull db) {
         
         FMResultSet *rs = [db executeQuery:sql withArgumentsInArray:values];
-        NSMutableDictionary *columnMap = [rs columnNameToIndexMap];
+        int columnCount = [rs columnCount];
         while ([rs next]) {
             __block id item = [[[self class] alloc] initWithDB:db];
-            [columnMap enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSNumber *_Nonnull obj, BOOL * _Nonnull stop) {
-                if ([key hasPrefix:@"fk_"]) {
-                    // columnNameForIndex called because FMResultSet columnNameToIndexMap method lowercases all names
-                    NSString *orjColumnName = [rs columnNameForIndex:[obj intValue]];
-                    NSString *tmp = [orjColumnName stringByReplacingOccurrencesOfString:@"fk_"
-                                                                           withString:@""];
+            for (int i = 0; i < columnCount; i++) {
+                NSString *columnName = [rs columnNameForIndex:i];
+                
+                if ([columnName hasPrefix:@"fk_"]) {
+                    //parse column name to class and propertys name
+                    NSString *tmp = [columnName stringByReplacingOccurrencesOfString:@"fk_"
+                                                                          withString:@""];
                     NSArray *components = [tmp componentsSeparatedByString:@"_"];
                     NSString *classString = components[0];
                     NSString *propertyName = components[1];
                     
+                    // create class from string
                     Class pclass = NSClassFromString(classString);
-                    
-                    NSNumber *_id = [rs objectForColumn:key];
+                    // get foreign key
+                    NSNumber *_id = [rs objectForColumn:columnName];
                     SPModel *p = [pclass getObjectWithID:[_id integerValue] withDB:db];
                     
                     [item setValue:p forKey:propertyName];
                 } else {
-                    [item setValue:[rs objectForColumn:key] forKey:key];
+                    [item setValue:[rs objectForColumn:columnName] forKey:columnName];
                 }
-            }];
+            }
             [array addObject:item];
         }
     }];
@@ -376,31 +378,33 @@ static NSMutableSet *checkedSqlTables;
 }
 
 + (SPModel*)getObjectWithSql:(NSString*)sql withValues:(NSArray*)values withDB:(FMDatabase*)db {
-    __block id item = [[[self class] alloc] initWithDB:db];
-    
     FMResultSet *rs = [db executeQuery:sql withArgumentsInArray:values];
-    NSMutableDictionary *columnMap = [rs columnNameToIndexMap];
+    
+    __block id item = [[[self class] alloc] initWithDB:db];
     if ([rs next]) {
-        [columnMap enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSNumber *_Nonnull obj, BOOL * _Nonnull stop) {
-            if ([key hasPrefix:@"fk_"]) {
-                // columnNameForIndex called because FMResultSet columnNameToIndexMap method lowercases all names
-                NSString *orjColumnName = [rs columnNameForIndex:[obj intValue]];
-                NSString *tmp = [orjColumnName stringByReplacingOccurrencesOfString:@"fk_"
+        int columnCount = [rs columnCount];
+        for (int i = 0; i < columnCount; i++) {
+            NSString *columnName = [rs columnNameForIndex:i];
+            
+            if ([columnName hasPrefix:@"fk_"]) {
+                //parse column name to class and propertys name
+                NSString *tmp = [columnName stringByReplacingOccurrencesOfString:@"fk_"
                                                                          withString:@""];
                 NSArray *components = [tmp componentsSeparatedByString:@"_"];
                 NSString *classString = components[0];
                 NSString *propertyName = components[1];
                 
+                // create class from string
                 Class pclass = NSClassFromString(classString);
-                
-                NSNumber *_id = [rs objectForColumn:key];
+                // get foreign key
+                NSNumber *_id = [rs objectForColumn:columnName];
                 SPModel *p = [pclass getObjectWithID:[_id integerValue] withDB:db];
                 
                 [item setValue:p forKey:propertyName];
             } else {
-                [item setValue:[rs objectForColumn:key] forKey:key];
+                [item setValue:[rs objectForColumn:columnName] forKey:columnName];
             }
-        }];
+        }
     }
     return item;
 }
