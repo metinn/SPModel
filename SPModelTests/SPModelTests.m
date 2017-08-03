@@ -38,7 +38,7 @@
     [super tearDown];
 }
 
-- (void)testExample {
+- (void)testSaveAndGet {
     srand48(time(0));
     
     Car *a = [Car new];
@@ -56,6 +56,24 @@
     XCTAssert(a2.yil == a.yil);
     XCTAssert(a2.tuketim == a.tuketim);
     XCTAssert([a2.km compare:a.km]);
+}
+
+- (void)testUpdate {
+    Car *a = [Car new];
+    a.marka = [self createRandomStringWithLength:8];
+    a.model = [self createRandomStringWithLength:10];
+    a.yil = arc4random() % 2020;
+    a.tuketim = drand48() * 20;
+    a.km = [NSNumber numberWithInt:arc4random() % 800000];
+    
+    [a save];
+    
+    Car *a2 = (Car*)[Car getObjectWithID:a.spid];
+    a2.marka = [self createRandomStringWithLength:10];
+    [a2 update];
+    
+    Car *a3 = (Car*)[Car getObjectWithID:a.spid];
+    XCTAssert([a2.marka isEqualToString:a3.marka]);
 }
 
 - (void)testRelationalObject {
@@ -93,6 +111,36 @@
     XCTAssert(p2.car.yil == p.car.yil);
     XCTAssert(p2.car.tuketim == p.car.tuketim);
     XCTAssert([p2.car.km compare:p.car.km]);
+}
+
+- (void)testRelationalObjectUpdate {
+    srand48(time(0));
+    
+    Person *p = [Person new];
+    p.name = [self createRandomStringWithLength:8];
+    p.surname = [self createRandomStringWithLength:10];
+    p.number = [self createRandomStringWithLength:11];
+    p.age = arc4random() % 100;
+    p.money = arc4random() % 20000;
+    
+    Car *a = [Car new];
+    a.marka = [self createRandomStringWithLength:8];
+    a.model = [self createRandomStringWithLength:10];
+    a.yil = arc4random() % 2020;
+    a.tuketim = drand48() * 20;
+    a.km = [NSNumber numberWithInt:arc4random() % 800000];
+    
+    p.car = a;
+    [p save];
+    
+    XCTAssertNotEqual(p.spid, 0, @"id not set");
+    
+    Person *p2 = (Person*)[Person getObjectWithID:p.spid];
+    p2.car.marka = [self createRandomStringWithLength:8];
+    [p2 update];
+    
+    Person *p3 = (Person*)[Person getObjectWithID:p.spid];
+    XCTAssert([p3.car.marka isEqualToString:p2.car.marka]);
 }
 
 - (NSString *)createRandomStringWithLength:(int)len {

@@ -254,23 +254,31 @@ static NSMutableSet *checkedSqlTables;
 
 - (BOOL)updateWithDB:(FMDatabase*)db {
     NSMutableString *updateSql = [NSMutableString stringWithFormat:@"update %@ set ", NSStringFromClass([self class])];
+    NSMutableArray *values = [NSMutableArray new];
     NSArray *properities = [self propertyNames];
     
-    NSMutableArray *values = [NSMutableArray new];
+    //add properties to update sql
     for (NSString* title in properities) {
-        [updateSql appendFormat:@"%@ = ?,", title];
         
         id value = [self valueForKey:title];
         if (value) {
-            [values addObject:[self valueForKey:title]];
+            
+            if ([[value class] isSubclassOfClass:[SPModel class]]) {
+                [(SPModel*)value updateWithDB:db];
+            } else {
+                [updateSql appendFormat:@"%@ = ?,", title];
+                [values addObject:[self valueForKey:title]];
+            }
+            
         } else {
-            [values addObject:@"NULL"];
+            // if value is null dont add to update sql
         }
     }
     
     // delete last comma
     [updateSql deleteCharactersInRange:NSMakeRange([updateSql length]-1, 1)];
     
+    // append where with object id
     [updateSql appendString:@" where spid = ?"];
     [values addObject:[self valueForKey:@"spid"]];
     
