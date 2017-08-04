@@ -7,7 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "FMDB.h"
+#import <FMDB/FMDB.h>
 
 @interface SPModelDB : NSObject
 @property (nonatomic) FMDatabaseQueue *fmdbq;

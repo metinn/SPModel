@@ -9,7 +9,7 @@
 #import "SPModel.h"
 
 @interface SPModelProperties : SPModel
-@property (nonatomic) NSInteger fk_spmodeltable;
+@property (nonatomic) int64_t fk_spmodeltable;
 @property (nonatomic) NSString *name;
 @property (nonatomic) NSString *type;
 

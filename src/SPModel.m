@@ -198,7 +198,7 @@ static NSMutableSet *checkedSqlTables;
                 [insertSql appendFormat:@"fk_%@_%@,", NSStringFromClass([value class]), title];
                 
                 [(SPModel*)value saveWithDB:db];
-                [values addObject:[NSNumber numberWithInteger:[(SPModel*)value spid]]];
+                [values addObject:[NSNumber numberWithLongLong:[(SPModel*)value spid]]];
             } else {
                 [insertSql appendFormat:@"%@,", title];
                 [values addObject:[self valueForKey:title]];

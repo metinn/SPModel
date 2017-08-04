@@ -7,11 +7,11 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "FMDB.h"
+#import <FMDB/FMDB.h>
 
 @interface SPModel : NSObject
 
-@property (nonatomic) NSInteger spid;
+@property (nonatomic) int64_t spid;
 
 - (BOOL)save;
 + (SPModel*)getObjectWithID:(NSInteger)modelid;
