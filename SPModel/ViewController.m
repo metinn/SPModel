@@ -21,24 +21,25 @@
     [super viewDidLoad];
     // Do any additional setup after loading the view, typically from a nib.
     
-//    Person *p = [Person new];
-//    p.name = @"Mehmet";
-//    p.surname = @"Baklaci";
-//    p.number = @"5331133217";
-//    p.age = 29;
-//    p.money = 3000;
-//    
-//    Car *a = [Car new];
-//    a.marka = @"Volkswagen";
-//    a.model = @"Polo";
-//    a.yil = 2001;
-//    a.tuketim = 5.2;
-//    a.km = [NSNumber numberWithInt:148000];
-//    
-//    p.car = a;
-//    
-//    [p save];
-//    
+    Person *p = [Person new];
+    p.name = @"Mehmet";
+    p.surname = @"Baklaci";
+    p.number = @"5331133217";
+    p.age = 29;
+    p.money = 3000;
+    
+    Car *a = [Car new];
+    a.marka = @"Volkswagen";
+    a.model = @"Polo";
+    a.yil = 2001;
+    a.tuketim = 5.2;
+    a.km = [NSNumber numberWithInt:148000];
+    
+    p.car = a;
+    
+    [p save];
+    
+//
 //    NSArray *persons = [Person getAll];
 //    for (Person *item in persons) {
 //        NSLog(@"Person -> %li %@ %@ %lld %li %@", item.spid, item.name, item.surname, item.money, item.age, item.number);

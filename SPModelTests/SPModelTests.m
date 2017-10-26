@@ -154,6 +154,40 @@
     return randomString;
 }
 
+- (void)testBulkInsert {
+    NSMutableArray *cars = [NSMutableArray new];
+    
+    Car *a = [Car new];
+    a.marka = @"BMW";
+    a.model = @"320d";
+    a.yil = 2009;
+    a.tuketim = 7.2;
+    a.km = [NSNumber numberWithInt:133600];
+    
+    [cars addObject:a];
+    
+    a = [Car new];
+    a.marka = @"Tesla";
+    a.model = @"Model X";
+    a.yil = 2017;
+    a.tuketim = 0.0;
+    a.km = [NSNumber numberWithInt:600];
+    
+    [cars addObject:a];
+    
+    a = [Car new];
+    a.marka = @"Skoda";
+    a.model = @"Fabia";
+    a.yil = 2009;
+    a.tuketim = 5.7;
+    a.km = [NSNumber numberWithInt:92100];
+    
+    [cars addObject:a];
+    
+    [self measureBlock:^{
+        [Car bulkInsert:cars];
+    }];
+}
 
 
 @end

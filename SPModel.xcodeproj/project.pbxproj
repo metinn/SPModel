@@ -16,8 +16,6 @@
 		791A64171F251C85007F15DE /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 791A64151F251C85007F15DE /* LaunchScreen.storyboard */; };
 		791A64301F251EB6007F15DE /* Car.m in Sources */ = {isa = PBXBuildFile; fileRef = 791A642D1F251EB6007F15DE /* Car.m */; };
 		791A64311F251EB6007F15DE /* Person.m in Sources */ = {isa = PBXBuildFile; fileRef = 791A642F1F251EB6007F15DE /* Person.m */; };
-		791A643C1F251ED3007F15DE /* SPModelProperties.m in Sources */ = {isa = PBXBuildFile; fileRef = 791A64351F251ED3007F15DE /* SPModelProperties.m */; };
-		791A643D1F251ED3007F15DE /* SPModelTable.m in Sources */ = {isa = PBXBuildFile; fileRef = 791A64371F251ED3007F15DE /* SPModelTable.m */; };
 		791A643E1F251ED3007F15DE /* SPModel.m in Sources */ = {isa = PBXBuildFile; fileRef = 791A64391F251ED3007F15DE /* SPModel.m */; };
 		791A643F1F251ED3007F15DE /* SPModelDB.m in Sources */ = {isa = PBXBuildFile; fileRef = 791A643B1F251ED3007F15DE /* SPModelDB.m */; };
 		791A64421F25B14C007F15DE /* Hash.m in Sources */ = {isa = PBXBuildFile; fileRef = 791A64411F25B14C007F15DE /* Hash.m */; };
@@ -55,10 +53,6 @@
 		791A642D1F251EB6007F15DE /* Car.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Car.m; sourceTree = "<group>"; };
 		791A642E1F251EB6007F15DE /* Person.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Person.h; sourceTree = "<group>"; };
 		791A642F1F251EB6007F15DE /* Person.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Person.m; sourceTree = "<group>"; };
-		791A64341F251ED3007F15DE /* SPModelProperties.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPModelProperties.h; sourceTree = "<group>"; };
-		791A64351F251ED3007F15DE /* SPModelProperties.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPModelProperties.m; sourceTree = "<group>"; };
-		791A64361F251ED3007F15DE /* SPModelTable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPModelTable.h; sourceTree = "<group>"; };
-		791A64371F251ED3007F15DE /* SPModelTable.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPModelTable.m; sourceTree = "<group>"; };
 		791A64381F251ED3007F15DE /* SPModel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPModel.h; sourceTree = "<group>"; };
 		791A64391F251ED3007F15DE /* SPModel.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPModel.m; sourceTree = "<group>"; };
 		791A643A1F251ED3007F15DE /* SPModelDB.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPModelDB.h; sourceTree = "<group>"; };
@@ -165,7 +159,6 @@
 		791A64321F251ED3007F15DE /* src */ = {
 			isa = PBXGroup;
 			children = (
-				791A64331F251ED3007F15DE /* models */,
 				791A64381F251ED3007F15DE /* SPModel.h */,
 				791A64391F251ED3007F15DE /* SPModel.m */,
 				791A643A1F251ED3007F15DE /* SPModelDB.h */,
@@ -173,17 +166,6 @@
 			);
 			path = src;
 			sourceTree = SOURCE_ROOT;
-		};
-		791A64331F251ED3007F15DE /* models */ = {
-			isa = PBXGroup;
-			children = (
-				791A64341F251ED3007F15DE /* SPModelProperties.h */,
-				791A64351F251ED3007F15DE /* SPModelProperties.m */,
-				791A64361F251ED3007F15DE /* SPModelTable.h */,
-				791A64371F251ED3007F15DE /* SPModelTable.m */,
-			);
-			path = models;
-			sourceTree = "<group>";
 		};
 		AD2D7E96486FAFCA2BEB69FF /* Frameworks */ = {
 			isa = PBXGroup;
@@ -244,7 +226,7 @@
 		791A63FC1F251C85007F15DE /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0830;
+				LastUpgradeCheck = 0900;
 				ORGANIZATIONNAME = com.metinguler;
 				TargetAttributes = {
 					638CA6461F2E855000D21FE5 = {
@@ -407,9 +389,7 @@
 			files = (
 				791A643E1F251ED3007F15DE /* SPModel.m in Sources */,
 				791A640F1F251C85007F15DE /* ViewController.m in Sources */,
-				791A643D1F251ED3007F15DE /* SPModelTable.m in Sources */,
 				791A643F1F251ED3007F15DE /* SPModelDB.m in Sources */,
-				791A643C1F251ED3007F15DE /* SPModelProperties.m in Sources */,
 				791A64421F25B14C007F15DE /* Hash.m in Sources */,
 				791A640C1F251C85007F15DE /* AppDelegate.m in Sources */,
 				791A64091F251C85007F15DE /* main.m in Sources */,
@@ -486,7 +466,9 @@
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
@@ -494,7 +476,11 @@
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
@@ -534,7 +520,9 @@
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
@@ -542,7 +530,11 @@
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
@@ -602,6 +594,7 @@
 				638CA64F1F2E855000D21FE5 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		791A63FF1F251C85007F15DE /* Build configuration list for PBXProject "SPModel" */ = {
 			isa = XCConfigurationList;

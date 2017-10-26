@@ -9,8 +9,6 @@
 #import "SPModel.h"
 #import <objc/runtime.h>
 #import "SPModelDB.h"
-#import "SPModelTable.h"
-#import "SPModelProperties.h"
 #import <sqlite3.h>
 
 @implementation SPModel
@@ -52,35 +50,8 @@ static NSMutableSet *checkedSqlTables;
         
         // create table if needed and log it
         NSString *createSql = [self getCrateTableSql];
-        BOOL isTableCreated = [self createTableIfNeededWithSql:createSql withDB:db];
-        if (isTableCreated &&
-            [self isKindOfClass:[SPModelTable class]] == NO &&
-            [self isKindOfClass:[SPModelProperties class]] == NO) {
-            
-            dispatch_serialq_async_safe(^{
-                [self saveNewTableInfoWithSql:createSql withDB:db];
-            });
-        }
-        
-        NSLog(@"%@ class object initialized", NSStringFromClass([self class]));
+        [self createTableIfNeededWithSql:createSql withDB:db];
     });
-}
-
-- (void)saveNewTableInfoWithSql:(NSString*)createSql withDB:(FMDatabase*)db {
-    SPModelTable *newTable = [[SPModelTable alloc] initWithDB:db];
-    newTable.name = NSStringFromClass([self class]);
-    newTable.createSql = createSql;
-    [newTable saveWithDB:db];
-    
-    NSArray *pro = [self propertyNames];
-    for (NSString* title in pro) {
-        NSString* type = [self getSqliteTypeFromPropertyName:title];
-        SPModelProperties *mp = [[SPModelProperties alloc] initWithDB:db];
-        mp.fk_spmodeltable = newTable.spid;
-        mp.name = title;
-        mp.type = type;
-        [mp saveWithDB:db];
-    }
 }
 
 - (BOOL)createTableIfNeededWithSql:(NSString*)createSql withDB:(FMDatabase*)db {
@@ -302,11 +273,11 @@ static NSMutableSet *checkedSqlTables;
 }
 
 + (BOOL)bulkInsert:(NSArray<SPModel*>*)models {
-    for (SPModel *m in models) {
-        [SPModelDB.shared.fmdbq inTransaction:^(FMDatabase * _Nonnull db, BOOL * _Nonnull rollback) {
+    [SPModelDB.shared.fmdbq inTransaction:^(FMDatabase * _Nonnull db, BOOL * _Nonnull rollback) {
+        for (SPModel *m in models) {
             [m saveWithDB:db];
-        }];
-    }
+        }
+    }];
     return YES;
 }
 
@@ -409,7 +380,7 @@ static NSMutableSet *checkedSqlTables;
     return item;
 }
 
-#pragma mark - Obj Runtime
+#pragma mark - Obj-C Runtime
 
 - (NSArray *) propertyNames
 {
