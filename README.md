@@ -24,7 +24,7 @@ Usage is very simple:
 2- Save it when you need
 
 ```Obj-c
-Car *c = [Car];
+Car *c = [Car new];
 c.brand = Volkswagen;
 c.model = Golf;
 c.hp = 110;
@@ -45,7 +45,7 @@ for (Car *item in cars) {
 }
 ```
 
-## What is Happened in Sqlite Side?
+## What Happened in Sqlite Side?
 
 1. When save method called there was no db. So SPModel created 'spmodel.db' in documents.
 2. Also there is no Sql Table to save Car object. Then SPModel created o proper table for Car class. Table name is class name (Car), and column names are property names.
