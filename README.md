@@ -76,11 +76,3 @@ If you will create Person class that have Car class as property, SPModel will ha
  * All methods are thread safe.
  * SPModel uses FMDB for sqlite managment
  * Because Sqlite scheme naming based on class names and properties, you already know the scheme. Direct SQL access will be very easy when you need.
-
-## Road Map
- 
- * More solid codebase (In Progress...)
- * Automatically handling new properties
- * Implementing proper way to migration
- * SPState class that stores only one object
- * Event Manager, publishing and listening to events, generally changes.
